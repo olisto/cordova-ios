@@ -44,7 +44,7 @@ function parseProjectFile (locations) {
         projectName = fs.readdirSync(project_dir).find(d => d.includes('.xcworkspace')).replace('.xcworkspace', '');
     }
     const xcBuildConfiguration = xcodeproj.pbxXCBuildConfigurationSection();
-    const plist_file_entry = _.find(xcBuildConfiguration, function (entry) {
+    const plist_file_entry = xcBuildConfiguration.find(entry => {
         return (
             entry.buildSettings &&
             entry.buildSettings.INFOPLIST_FILE &&
