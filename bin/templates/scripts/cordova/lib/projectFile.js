@@ -37,7 +37,7 @@ function parseProjectFile (locations) {
 
     const xcodeproj = xcode.project(pbxPath);
     xcodeproj.parseSync();
-    
+
     const workspaceName = fs.readdirSync(project_dir).find(d => d.includes('.xcworkspace')) || '';
     const projectName = workspaceName.replace('.xcworkspace', '');
     const xcBuildConfiguration = xcodeproj.pbxXCBuildConfigurationSection();
@@ -48,6 +48,8 @@ function parseProjectFile (locations) {
 
     console.log('config', xcBuildConfiguration);
     console.log('values', Object.values(xcBuildConfiguration));
+    console.log('first value', Object.values(xcBuildConfiguration)[0]);
+    console.log('buildSettings of first', Object.values(xcBuildConfiguration)[0].buildSettings);
 
     const plist_file_entry = _.find(xcBuildConfiguration, entry => (
         entry.buildSettings &&
