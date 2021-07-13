@@ -46,11 +46,6 @@ function parseProjectFile (locations) {
     // workspaceName determined from xcworkspace
     const plistFilePath = `${projectName}/${projectName}-Info.plist`;
 
-    console.log('config', xcBuildConfiguration);
-    console.log('values', Object.values(xcBuildConfiguration));
-    console.log('first value', Object.values(xcBuildConfiguration)[0]);
-    console.log('buildSettings of first', Object.values(xcBuildConfiguration)[0].buildSettings);
-
     const plist_file_entry = Object.values(xcBuildConfiguration).find(entry => (
         entry.buildSettings &&
         entry.buildSettings.INFOPLIST_FILE &&
