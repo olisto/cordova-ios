@@ -51,7 +51,7 @@ function parseProjectFile (locations) {
     console.log('first value', Object.values(xcBuildConfiguration)[0]);
     console.log('buildSettings of first', Object.values(xcBuildConfiguration)[0].buildSettings);
 
-    const plist_file_entry = _.find(xcBuildConfiguration, entry => (
+    const plist_file_entry = Object.values(xcBuildConfiguration).find(entry => (
         entry.buildSettings &&
         entry.buildSettings.INFOPLIST_FILE &&
         entry.buildSettings.INFOPLIST_FILE.includes(plistFilePath)
