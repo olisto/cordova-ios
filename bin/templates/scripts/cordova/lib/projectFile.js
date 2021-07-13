@@ -37,9 +37,10 @@ function parseProjectFile (locations) {
 
     const xcodeproj = xcode.project(pbxPath);
     xcodeproj.parseSync();
-
+    
     const workspaceName = fs.readdirSync(project_dir).find(d => d.includes('.xcworkspace')) || '';
     const projectName = workspaceName.replace('.xcworkspace', '');
+    const xcBuildConfiguration = xcodeproj.pbxXCBuildConfigurationSection();
 
     // NOTE: This would be nonsense `/-Info.plist` value if there is no
     // workspaceName determined from xcworkspace
