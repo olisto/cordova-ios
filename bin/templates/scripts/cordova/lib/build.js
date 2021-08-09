@@ -194,9 +194,9 @@ module.exports.run = buildOpts => {
                     events.emit('warn', `Project path: ${projectPath}`);
                     events.emit('warn', `Project name: ${projectName}`);
                     events.emit('warn', `Bundle identifier: ${bundleIdentifier}`);
-                    events.emit('warn', `Provisioning profiles: ${buildOpts.provisioningProfile}`);
+                    events.emit('warn', `Provisioning profiles: ${JSON.stringify(buildOpts.provisioningProfile)}`);
                     events.emit('warn', `Main provisioning profile: ${buildOpts.provisioningProfile[bundleIdentifier]}`);
-                    
+
                     extraConfig += `PROVISIONING_PROFILE = ${buildOpts.provisioningProfile[bundleIdentifier]}\n`;
                 }
             }
