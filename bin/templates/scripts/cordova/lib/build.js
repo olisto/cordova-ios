@@ -188,6 +188,7 @@ module.exports.run = buildOpts => {
                 if (typeof buildOpts.provisioningProfile === 'string') {
                     extraConfig += `PROVISIONING_PROFILE = ${buildOpts.provisioningProfile}\n`;
                 } else {
+                    const project = createProjectObject(projectPath, projectName);
                     const bundleIdentifier = getBundleIdentifier(project);
                     extraConfig += `PROVISIONING_PROFILE = ${buildOpts.provisioningProfile[bundleIdentifier]}\n`;
                 }
