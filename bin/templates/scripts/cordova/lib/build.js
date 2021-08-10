@@ -185,7 +185,16 @@ module.exports.run = buildOpts => {
                 extraConfig += `CODE_SIGN_RESOURCE_RULES_PATH = ${buildOpts.codeSignResourceRules}\n`;
             }
             if (buildOpts.provisioningProfile) {
-                extraConfig += `PROVISIONING_PROFILE = ${buildOpts.provisioningProfile}\n`;
+                if (typeof buildOpts.provisioningProfile === 'string') {
+                    events.emit('verbose', `Provisioning profile: ${buildOpts.provisioningProfile}`);
+                    extraConfig += `PROVISIONING_PROFILE = ${buildOpts.provisioningProfile}\n`;
+                } else {
+                    const project = createProjectObject(projectPath, projectName);
+                    const bundleIdentifier = getBundleIdentifier(project);
+
+                    events.emit('verbose', `Provisioning profiles: ${JSON.stringify(buildOpts.provisioningProfile)}`);
+                    extraConfig += `PROVISIONING_PROFILE = ${buildOpts.provisioningProfile[bundleIdentifier]}\n`;
+                }
             }
             if (buildOpts.developmentTeam) {
                 extraConfig += `DEVELOPMENT_TEAM = ${buildOpts.developmentTeam}\n`;
@@ -248,7 +257,12 @@ module.exports.run = buildOpts => {
             }
 
             if (buildOpts.provisioningProfile && bundleIdentifier) {
-                exportOptions.provisioningProfiles = { [bundleIdentifier]: String(buildOpts.provisioningProfile) };
+                if (typeof buildOpts.provisioningProfile === 'string') {
+                    exportOptions.provisioningProfiles = { [bundleIdentifier]: String(buildOpts.provisioningProfile) };
+                } else {
+                    events.emit('log', 'Setting multiple provisioning profiles for signing');
+                    exportOptions.provisioningProfiles = buildOpts.provisioningProfile;
+                }
                 exportOptions.signingStyle = 'manual';
             }
 
