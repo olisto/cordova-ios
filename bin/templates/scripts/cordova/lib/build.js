@@ -186,17 +186,13 @@ module.exports.run = buildOpts => {
             }
             if (buildOpts.provisioningProfile) {
                 if (typeof buildOpts.provisioningProfile === 'string') {
+                    events.emit('verbose', `Provisioning profile: ${buildOpts.provisioningProfile}`);
                     extraConfig += `PROVISIONING_PROFILE = ${buildOpts.provisioningProfile}\n`;
                 } else {
                     const project = createProjectObject(projectPath, projectName);
                     const bundleIdentifier = getBundleIdentifier(project);
 
-                    events.emit('warn', `Project path: ${projectPath}`);
-                    events.emit('warn', `Project name: ${projectName}`);
-                    events.emit('warn', `Bundle identifier: ${bundleIdentifier}`);
-                    events.emit('warn', `Provisioning profiles: ${JSON.stringify(buildOpts.provisioningProfile)}`);
-                    events.emit('warn', `Main provisioning profile: ${buildOpts.provisioningProfile[bundleIdentifier]}`);
-
+                    events.emit('verbose', `Provisioning profiles: ${JSON.stringify(buildOpts.provisioningProfile)}`);
                     extraConfig += `PROVISIONING_PROFILE = ${buildOpts.provisioningProfile[bundleIdentifier]}\n`;
                 }
             }
