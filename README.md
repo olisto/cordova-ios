@@ -32,12 +32,12 @@ Cordova iOS is an iOS application library that allows for Cordova-based projects
 
 ## Requirements
 
-* Xcode 11.x or greater. Download it at the [Apple Developer - Downloads](https://developer.apple.com/downloads) or the [Mac App Store](https://apps.apple.com/us/app/xcode/id497799835?mt=12).
-* [Node.js](https://nodejs.org)
+* Xcode 15.x or greater. Download it at the [Apple Developer - Downloads](https://developer.apple.com/downloads) or the [Mac App Store](https://apps.apple.com/us/app/xcode/id497799835?mt=12).
+* [Node.js](https://nodejs.org) 20.5.0 or greater
 
 ## Create a Cordova project
 
-Follow the instructions in the [**Command-Line Usage** section](https://cordova.apache.org/docs/en/edge/guide_cli_index.md.html#The%20Command-line%20Interface) of [Apache Cordova Docs](https://cordova.apache.org/docs/en/latest/)
+Follow the instructions in the [**Create your first Cordova app**](https://cordova.apache.org/docs/en/latest/guide/cli/index.html) section of [Apache Cordova Docs](https://cordova.apache.org/docs/en/latest/)
 
 To use a **shared CordovaLib**, for example in development, link the appropriate cordova-ios platform folder path:
 
@@ -47,12 +47,16 @@ cordova platform add --link /path/to/cordova-ios
 
 ## Updating a Cordova project
 
-When you install a new `cordova-cli` version that comes with a new iOS platform version, from within your project:
+When you install a new version of the [`Cordova CLI`](https://www.npmjs.com/package/cordova) that pins a new version of the [`Cordova-iOS`](https://www.npmjs.com/package/cordova-ios) platform, you can follow these simple upgrade steps within your project:
 
 ```bash
 cordova platform rm ios
 cordova platform add ios
 ```
+
+## Debugging in Xcode
+
+Import project in Xcode through _File > Open_ and targeting `/path/to/your-cdv-project/platforms/ios/App.xcworkspace`.
 
 ## How to Test Repo Development
 
@@ -61,6 +65,7 @@ npm install
 npm test
 ```
 
-## Futher reading
+## Further reading
 
-* [https://cordova.apache.org/](https://cordova.apache.org/)
+* [Apache Cordova](https://cordova.apache.org/)
+* [Cordova iOS API Documentation](https://apache.github.io/cordova-ios/)
