@@ -17,7 +17,7 @@
  under the License.
  */
 
-#import "CDVInvokedUrlCommand.h"
+#import <Cordova/CDVInvokedUrlCommand.h>
 #import "CDVJSON_private.h"
 
 @implementation CDVInvokedUrlCommand
@@ -27,12 +27,17 @@
 @synthesize className = _className;
 @synthesize methodName = _methodName;
 
-+ (CDVInvokedUrlCommand*)commandFromJson:(NSArray*)jsonEntry
++ (instancetype)commandFromJson:(NSArray *)jsonEntry
 {
     return [[CDVInvokedUrlCommand alloc] initFromJson:jsonEntry];
 }
 
-- (id)initFromJson:(NSArray*)jsonEntry
+- (instancetype)init
+{
+    return [self initWithArguments:nil callbackId:nil className:nil methodName:nil];
+}
+
+- (instancetype)initFromJson:(NSArray *)jsonEntry
 {
     id tmp = [jsonEntry objectAtIndex:0];
     NSString* callbackId = tmp == [NSNull null] ? nil : tmp;
@@ -46,10 +51,10 @@
                         methodName:methodName];
 }
 
-- (id)initWithArguments:(NSArray*)arguments
-             callbackId:(NSString*)callbackId
-              className:(NSString*)className
-             methodName:(NSString*)methodName
+- (instancetype)initWithArguments:(NSArray *)arguments
+                       callbackId:(NSString *)callbackId
+                        className:(NSString *)className
+                       methodName:(NSString *)methodName
 {
     self = [super init];
     if (self != nil) {

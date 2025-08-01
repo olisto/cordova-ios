@@ -18,13 +18,13 @@
  */
 
 const rewire = require('rewire');
-const shell = require('shelljs');
-const versions = require('../../../../bin/templates/scripts/cordova/lib/versions');
+const which = require('which');
+const versions = require('../../../../lib/versions');
 
 describe('check_reqs', () => {
     let checkReqs;
     beforeEach(() => {
-        checkReqs = rewire('../../../../bin/templates/scripts/cordova/lib/check_reqs');
+        checkReqs = rewire('../../../../lib/check_reqs');
     });
 
     describe('checkTool method', () => {
@@ -33,16 +33,16 @@ describe('check_reqs', () => {
         beforeEach(() => {
             checkTool = checkReqs.__get__('checkTool');
 
-            spyOn(shell, 'which').and.returnValue('/bin/node');
+            spyOn(which, 'sync').and.returnValue('/bin/node');
             spyOn(versions, 'get_tool_version').and.returnValue(Promise.resolve('1.0.0'));
         });
 
         it('should not have found tool.', () => {
-            shell.which.and.returnValue(false);
+            which.sync.and.returnValue(false);
 
             return checkTool('node', '1.0.0').then(
                 () => fail('Expected promise to be rejected'),
-                reason => expect(reason).toContain('node was not found.')
+                reason => expect(reason.message).toContain('node was not found.')
             );
         });
 
@@ -62,51 +62,7 @@ describe('check_reqs', () => {
         it('should reject because tool does not meet minimum requirement.', () => {
             return checkTool('node', '1.0.1').then(
                 () => fail('Expected promise to be rejected'),
-                reason => expect(reason).toContain('version 1.0.1 or greater, you have version 1.0.0')
-            );
-        });
-    });
-
-    describe('check_cocoapods method', () => {
-        let toolsChecker;
-        beforeEach(() => {
-            toolsChecker = jasmine.createSpy('toolsChecker')
-                .and.returnValue(Promise.resolve({ version: '1.2.3' }));
-        });
-
-        it('should resolve when on an unsupported platform', () => {
-            checkReqs.__set__({
-                os_platform_is_supported: () => false
-            });
-
-            return checkReqs.check_cocoapods(toolsChecker).then(toolOptions => {
-                expect(toolsChecker).not.toHaveBeenCalled();
-                expect(toolOptions.ignore).toBeDefined();
-                expect(toolOptions.ignoreMessage).toBeDefined();
-            });
-        });
-
-        it('should resolve when toolsChecker resolves', () => {
-            checkReqs.__set__({
-                os_platform_is_supported: () => true
-            });
-            spyOn(shell, 'exec').and.returnValue({ code: 1 });
-
-            return checkReqs.check_cocoapods(toolsChecker).then(() => {
-                expect(shell.exec).toHaveBeenCalled();
-            });
-        });
-
-        it('should reject when toolsChecker rejects', () => {
-            checkReqs.__set__({
-                os_platform_is_supported: () => true
-            });
-            const testError = new Error();
-            toolsChecker.and.callFake(() => Promise.reject(testError));
-
-            return checkReqs.check_cocoapods(toolsChecker).then(
-                () => fail('Expected promise to be rejected'),
-                err => expect(err).toBe(testError)
+                reason => expect(reason.message).toContain('version 1.0.1 or greater, you have version 1.0.0')
             );
         });
     });

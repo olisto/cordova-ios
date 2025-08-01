@@ -17,64 +17,46 @@
     under the License.
 */
 
-const path = require('path');
-const shell = require('shelljs');
+const path = require('node:path');
+const fs = require('node:fs');
 const tmp = require('tmp');
+const projectFile = require('../../../lib/projectFile');
 
-const projectFile = require('../../../bin/templates/scripts/cordova/lib/projectFile');
+tmp.setGracefulCleanup();
 
-const iosProjectFixture = path.join(__dirname, 'fixtures/ios-config-xml/*');
+const tempdir = tmp.dirSync({ unsafeCleanup: true });
+const iosProject = path.join(tempdir.name, 'plugman/projectFile');
+const iosProjectFixture = path.join(__dirname, 'fixtures/ios-config-xml');
+
+const locations = {
+    root: iosProject,
+    pbxproj: path.join(iosProject, 'App.xcodeproj', 'project.pbxproj')
+};
 
 describe('projectFile', () => {
-    let iosProject = '';
-
-    let locations = {};
-
     beforeEach(() => {
-        const tmpobj = tmp.dirSync();
+        fs.cpSync(iosProjectFixture, iosProject, { recursive: true });
+    });
 
-        iosProject = path.join(tmpobj.name, 'plugman/projectFile');
-
-        locations = {
-            root: iosProject,
-            pbxproj: path.join(
-                iosProject,
-                'SampleApp.xcodeproj/project.pbxproj')
-        };
-
-        shell.mkdir('-p', iosProject);
-        shell.cp('-rf', iosProjectFixture, iosProject);
+    afterEach(() => {
+        fs.rmSync(iosProject, { recursive: true, force: true });
     });
 
     describe('parse method', () => {
-        it('Test#001 : should return result with correct xcode_path value', () => {
-            expect(projectFile.parse(locations).xcode_path)
-                .toEqual(path.join(iosProject, 'SampleApp'));
-        });
-
-        it('Test#002 : should throw if project is not an xcode project', () => {
-            shell.rm('-rf', path.join(iosProject, 'SampleApp', 'SampleApp.xcodeproj'));
+        it('Test#001 : should throw if project is not an xcode project', () => {
+            fs.rmSync(path.join(iosProject, 'App', 'App.xcodeproj'), { recursive: true, force: true });
             expect(() => { projectFile.parse(); }).toThrow();
         });
-
-        it('Test#003 : should throw if project does not contain an appropriate config.xml file', () => {
-            shell.rm(path.join(iosProject, 'SampleApp', 'config.xml'));
+        it('Test#002 : should throw if project does not contain an appropriate config.xml file', () => {
+            fs.rmSync(path.join(iosProject, 'App', 'config.xml'));
             expect(() => { projectFile.parse(locations); })
                 .toThrow(new Error('Could not find config.xml file.'));
         });
-
-        it('Test#004 : should throw if project does not contain an appropriate -Info.plist file', () => {
-            shell.rm(path.join(iosProject, 'SampleApp', 'SampleApp-Info.plist'));
-            expect(() => { projectFile.parse(locations); })
-                .toThrow(new Error(
-                    'Could not find SampleApp-Info.plist file.'));
-        });
-
-        it('Test#005 : should return right directory when multiple .plist files are present', () => {
+        it('Test#004 : should return right directory when multiple .plist files are present', () => {
             // Create a folder named A with config.xml and .plist files in it
             const pathToFolderA = path.join(iosProject, 'A');
-            shell.mkdir(pathToFolderA);
-            shell.cp('-rf', path.join(iosProject, 'SampleApp/*'), pathToFolderA);
+            fs.mkdirSync(pathToFolderA, { recursive: true });
+            fs.cpSync(path.join(iosProject, 'App'), pathToFolderA, { recursive: true });
 
             const parsedProjectFile = projectFile.parse(locations);
             const pluginsDir = parsedProjectFile.plugins_dir;
@@ -83,42 +65,17 @@ describe('projectFile', () => {
 
             const pluginsDirParent = path.dirname(pluginsDir);
             const resourcesDirParent = path.dirname(resourcesDir);
-            const sampleAppDir = path.join(iosProject, 'SampleApp');
+            const sampleAppDir = path.join(iosProject, 'App');
 
             expect(pluginsDirParent).toEqual(sampleAppDir);
             expect(resourcesDirParent).toEqual(sampleAppDir);
             expect(xcodePath).toEqual(sampleAppDir);
         });
+    });
 
-        it('Test#006 : getPackageName method should return the CFBundleIdentifier from the project\'s Info.plist file', () => {
+    describe('other methods', () => {
+        it('Test#005 : getPackageName method should return the CFBundleIdentifier from the project\'s Info.plist file', () => {
             expect(projectFile.parse(locations).getPackageName()).toEqual('com.example.friendstring');
-        });
-
-        it('Test#007 : should use correct plist in case an extra INFOPLIST_FILE entry comes first in project.pbxproj', () => {
-            // Change a single INFOPLIST_FILE entry to:
-            //     INFOPLIST_FILE = "SampleApp/Sample2-Info.plist"
-            // Second INFOPLIST_FILE entry remains correct in project.pbxproj
-            shell.sed('-i',
-                'INFOPLIST_FILE = "SampleApp/SampleApp-Info.plist"',
-                'INFOPLIST_FILE = "SampleApp/Sample2-Info.plist"',
-                path.join(iosProject,
-                    'SampleApp.xcodeproj', 'project.pbxproj'));
-
-            // ensure parse method uses correct INFOPLIST_FILE entry and
-            // reads from correct plist file:
-            expect(projectFile.parse(locations).getPackageName())
-                .toEqual('com.example.friendstring');
-        });
-
-        it('Test#008 : should throw if project contains single -Info.plist file with incorrect name', () => {
-            shell.mv(path.join(iosProject, 'SampleApp', 'SampleApp-Info.plist'),
-                path.join(iosProject, 'SampleApp', 'Sample2-Info.plist'));
-            shell.sed('-i', /SampleApp-Info.plist/g, 'Sample2-Info.plist',
-                path.join(iosProject, 'SampleApp.xcodeproj', 'project.pbxproj'));
-
-            expect(() => { projectFile.parse(locations); }).toThrow(
-                new Error(
-                    'Could not find correct INFOPLIST_FILE entry in pbxproj'));
         });
     });
 });

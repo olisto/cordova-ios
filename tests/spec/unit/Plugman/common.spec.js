@@ -16,22 +16,24 @@
  *
 */
 
-const fs = require('fs');
-const path = require('path');
-const osenv = require('os');
-const shell = require('shelljs');
+const fs = require('node:fs');
+const path = require('node:path');
+const tmp = require('tmp');
 const rewire = require('rewire');
 
-const common = rewire('../../../../bin/templates/scripts/cordova/lib/plugman/pluginHandlers');
+const common = rewire('../../../../lib/plugman/pluginHandlers');
 
-const test_dir = path.join(osenv.tmpdir(), 'test_plugman');
+tmp.setGracefulCleanup();
+
+const tempdir = tmp.dirSync({ unsafeCleanup: true });
+const test_dir = path.join(tempdir.name, 'test_plugman');
 const project_dir = path.join(test_dir, 'project');
 const src = path.join(project_dir, 'src');
 const dest = path.join(project_dir, 'dest');
 const srcDirTree = path.join(src, 'one', 'two', 'three');
 const srcFile = path.join(srcDirTree, 'test.java');
 const symlink_file = path.join(srcDirTree, 'symlink');
-const non_plugin_file = path.join(osenv.tmpdir(), 'non_plugin_file');
+const non_plugin_file = path.join(tempdir.name, 'non_plugin_file');
 
 const copyFile = common.__get__('copyFile');
 const copyNewFile = common.__get__('copyNewFile');
@@ -40,22 +42,22 @@ const removeFileAndParents = common.__get__('removeFileAndParents');
 describe('common handler routines', () => {
     describe('copyFile', () => {
         it('Test 001 : should throw if source path not found', () => {
-            shell.rm('-rf', test_dir);
+            fs.rmSync(test_dir, { recursive: true, force: true });
             expect(() => { copyFile(test_dir, src, project_dir, dest); })
                 .toThrow(new Error(`"${src}" not found!`));
         });
 
         it('Test 002 : should throw if src not in plugin directory', () => {
-            shell.mkdir('-p', project_dir);
+            fs.mkdirSync(project_dir, { recursive: true });
             fs.writeFileSync(non_plugin_file, 'contents', 'utf-8');
             const outside_file = '../non_plugin_file';
             expect(() => { copyFile(test_dir, outside_file, project_dir, dest); })
                 .toThrow(new Error(`File "${path.resolve(test_dir, outside_file)}" is located outside the plugin directory "${test_dir}"`));
-            shell.rm('-rf', test_dir);
+            fs.rmSync(test_dir, { recursive: true, force: true });
         });
 
         it('Test 003 : should allow symlink src, if inside plugin', () => {
-            shell.mkdir('-p', srcDirTree);
+            fs.mkdirSync(srcDirTree, { recursive: true });
             fs.writeFileSync(srcFile, 'contents', 'utf-8');
 
             // This will fail on windows if not admin - ignore the error in that case.
@@ -64,11 +66,11 @@ describe('common handler routines', () => {
             }
 
             copyFile(test_dir, symlink_file, project_dir, dest);
-            shell.rm('-rf', project_dir);
+            fs.rmSync(project_dir, { recursive: true, force: true });
         });
 
         it('Test 004 : should throw if symlink is linked to a file outside the plugin', () => {
-            shell.mkdir('-p', srcDirTree);
+            fs.mkdirSync(srcDirTree, { recursive: true });
             fs.writeFileSync(non_plugin_file, 'contents', 'utf-8');
 
             // This will fail on windows if not admin - ignore the error in that case.
@@ -78,71 +80,70 @@ describe('common handler routines', () => {
 
             expect(() => { copyFile(test_dir, symlink_file, project_dir, dest); })
                 .toThrow(new Error(`File "${path.resolve(test_dir, symlink_file)}" is located outside the plugin directory "${test_dir}"`));
-            shell.rm('-rf', project_dir);
+            fs.rmSync(project_dir, { recursive: true, force: true });
         });
 
         it('Test 005 : should throw if dest is outside the project directory', () => {
-            shell.mkdir('-p', srcDirTree);
+            fs.mkdirSync(srcDirTree, { recursive: true });
             fs.writeFileSync(srcFile, 'contents', 'utf-8');
             expect(() => { copyFile(test_dir, srcFile, project_dir, non_plugin_file); })
                 .toThrow(new Error(`Destination "${path.resolve(project_dir, non_plugin_file)}" for source file "${path.resolve(test_dir, srcFile)}" is located outside the project`));
-            shell.rm('-rf', project_dir);
+            fs.rmSync(project_dir, { recursive: true, force: true });
         });
 
         it('Test 006 : should call mkdir -p on target path', () => {
-            shell.mkdir('-p', srcDirTree);
+            fs.mkdirSync(srcDirTree, { recursive: true });
             fs.writeFileSync(srcFile, 'contents', 'utf-8');
 
-            const s = spyOn(shell, 'mkdir').and.callThrough();
+            const s = spyOn(fs, 'mkdirSync').and.callThrough();
             const resolvedDest = path.resolve(project_dir, dest);
 
             copyFile(test_dir, srcFile, project_dir, dest);
 
             expect(s).toHaveBeenCalled();
-            expect(s).toHaveBeenCalledWith('-p', path.dirname(resolvedDest));
-            shell.rm('-rf', project_dir);
+            expect(s).toHaveBeenCalledWith(path.dirname(resolvedDest), { recursive: true });
+            fs.rmSync(project_dir, { recursive: true, force: true });
         });
 
         it('Test 007 : should call cp source/dest paths', () => {
-            shell.mkdir('-p', srcDirTree);
+            fs.mkdirSync(srcDirTree, { recursive: true });
             fs.writeFileSync(srcFile, 'contents', 'utf-8');
 
-            const s = spyOn(shell, 'cp').and.callThrough();
+            spyOn(fs, 'cpSync').and.callThrough();
             const resolvedDest = path.resolve(project_dir, dest);
 
             copyFile(test_dir, srcFile, project_dir, dest);
 
-            expect(s).toHaveBeenCalled();
-            expect(s).toHaveBeenCalledWith('-f', srcFile, resolvedDest);
+            expect(fs.cpSync).toHaveBeenCalled();
+            expect(fs.cpSync).toHaveBeenCalledWith(srcFile, resolvedDest, { recursive: true });
 
-            shell.rm('-rf', project_dir);
+            fs.rmSync(project_dir, { recursive: true, force: true });
         });
     });
 
     describe('copyNewFile', () => {
         it('Test 008 : should throw if target path exists', () => {
-            shell.mkdir('-p', dest);
+            fs.mkdirSync(dest, { recursive: true });
             expect(() => { copyNewFile(test_dir, src, project_dir, dest); })
                 .toThrow(new Error(`"${dest}" already exists!`));
-            shell.rm('-rf', dest);
+            fs.rmSync(dest, { recursive: true, force: true });
         });
     });
 
     describe('deleteJava', () => {
-        it('Test 009 : should call fs.unlinkSync on the provided paths', () => {
-            shell.mkdir('-p', srcDirTree);
+        it('Test 009 : source file should have been removed', () => {
+            fs.mkdirSync(srcDirTree, { recursive: true });
             fs.writeFileSync(srcFile, 'contents', 'utf-8');
 
-            const s = spyOn(fs, 'unlinkSync').and.callThrough();
+            expect(fs.existsSync(srcFile)).toBe(true);
             removeFileAndParents(project_dir, srcFile);
-            expect(s).toHaveBeenCalled();
-            expect(s).toHaveBeenCalledWith(path.resolve(project_dir, srcFile));
+            expect(fs.existsSync(srcFile)).toBe(false);
 
-            shell.rm('-rf', srcDirTree);
+            fs.rmSync(srcDirTree, { recursive: true, force: true });
         });
 
         it('Test 010 : should delete empty directories after removing source code in path hierarchy', () => {
-            shell.mkdir('-p', srcDirTree);
+            fs.mkdirSync(srcDirTree, { recursive: true });
             fs.writeFileSync(srcFile, 'contents', 'utf-8');
 
             removeFileAndParents(project_dir, srcFile);
@@ -150,17 +151,17 @@ describe('common handler routines', () => {
             expect(fs.existsSync(srcDirTree)).not.toBe(true);
             expect(fs.existsSync(path.join(src, 'one'))).not.toBe(true);
 
-            shell.rm('-rf', srcDirTree);
+            fs.rmSync(srcDirTree, { recursive: true, force: true });
         });
 
         it('Test 011 : should delete the top-level src directory if all plugins added were removed', () => {
-            shell.mkdir('-p', srcDirTree);
+            fs.mkdirSync(srcDirTree, { recursive: true });
             fs.writeFileSync(srcFile, 'contents', 'utf-8');
 
             removeFileAndParents(project_dir, srcFile);
             expect(fs.existsSync(src)).toBe(false);
 
-            shell.rm('-rf', srcDirTree);
+            fs.rmSync(srcDirTree, { recursive: true, force: true });
         });
     });
 });
@@ -169,7 +170,7 @@ function ignoreEPERMonWin32 (symlink_src, symlink_dest) {
     try {
         fs.symlinkSync(symlink_src, symlink_dest);
     } catch (e) {
-        if (process.platform === 'win32' && e.message.indexOf('Error: EPERM, operation not permitted' > -1)) {
+        if (process.platform === 'win32' && e.message.indexOf('Error: EPERM, operation not permitted') > -1) {
             return true;
         }
         throw e;

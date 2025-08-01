@@ -19,10 +19,33 @@
 
 #import <WebKit/WebKit.h>
 
+#ifdef NS_SWIFT_UI_ACTOR
+#define CDV_SWIFT_UI_ACTOR NS_SWIFT_UI_ACTOR
+#else
+#define CDV_SWIFT_UI_ACTOR
+#endif
+
+@class CDVViewController;
+
+NS_ASSUME_NONNULL_BEGIN
+
+CDV_SWIFT_UI_ACTOR
 @interface CDVWebViewUIDelegate : NSObject <WKUIDelegate>
 
-@property (nonatomic, copy) NSString* title;
+typedef NS_ENUM(NSInteger, CDVWebViewPermissionGrantType) {
+    CDVWebViewPermissionGrantType_Prompt,
+    CDVWebViewPermissionGrantType_Deny,
+    CDVWebViewPermissionGrantType_Grant,
+    CDVWebViewPermissionGrantType_GrantIfSameHost_ElsePrompt,
+    CDVWebViewPermissionGrantType_GrantIfSameHost_ElseDeny
+};
 
-- (instancetype)initWithTitle:(NSString*)title;
+@property (nonatomic, nullable, copy) NSString* title;
+@property (nonatomic, assign) BOOL allowNewWindows;
+@property (nonatomic, assign) CDVWebViewPermissionGrantType mediaPermissionGrantType;
+
+- (instancetype)initWithViewController:(CDVViewController*)vc;
 
 @end
+
+NS_ASSUME_NONNULL_END

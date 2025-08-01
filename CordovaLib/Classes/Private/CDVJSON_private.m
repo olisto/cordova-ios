@@ -18,7 +18,6 @@
  */
 
 #import "CDVJSON_private.h"
-#import <Foundation/NSJSONSerialization.h>
 
 @implementation NSArray (CDVJSONSerializingPrivate)
 
